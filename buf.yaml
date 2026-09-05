@@ -1,0 +1,22 @@
+version: v2
+
+modules:
+  - path: proto/src
+
+deps:
+  - buf.build/bufbuild/protovalidate
+
+breaking:
+  use:
+    - FILE
+
+lint:
+  use:
+    - STANDARD
+  except:
+    - PACKAGE_VERSION_SUFFIX
+    - PACKAGE_DIRECTORY_MATCH
+    - RPC_RESPONSE_STANDARD_NAME
+    - RPC_REQUEST_RESPONSE_UNIQUE
+  ignore:
+    - proto/src/grpc/health/v1/health.proto

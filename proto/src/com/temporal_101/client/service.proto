@@ -1,0 +1,190 @@
+syntax = "proto3";
+
+package com.temporal_101.client;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "go.101.temporal/go/com/temporal_101/client;temporal101client";
+
+service ClientService {
+  rpc ExecuteWorkflow(ExecuteWorkflowRequest) returns (ExecuteWorkflowResponse);
+  rpc StartWorkflow(StartWorkflowRequest) returns (StartWorkflowResponse);
+  rpc SignalWorkflow(SignalWorkflowRequest) returns (SignalWorkflowResponse);
+  rpc QueryWorkflow(QueryWorkflowRequest) returns (QueryWorkflowResponse);
+  rpc GetWorkflow(GetWorkflowRequest) returns (ExecuteWorkflowResponse);
+
+  rpc CreateSchedule(CreateScheduleRequest) returns (CreateScheduleResponse);
+  rpc UpdateSchedule(UpdateScheduleRequest) returns (DescribeScheduleResponse);
+  rpc DescribeSchedule(DescribeScheduleRequest) returns (DescribeScheduleResponse);
+  rpc ListSchedules(ListSchedulesRequest) returns (ListSchedulesResponse);
+  rpc TriggerSchedule(TriggerScheduleRequest) returns (TriggerScheduleResponse);
+  rpc PauseSchedule(PauseScheduleRequest) returns (PauseScheduleResponse);
+  rpc UnpauseSchedule(UnpauseScheduleRequest) returns (UnpauseScheduleResponse);
+  rpc DeleteSchedule(DeleteScheduleRequest) returns (DeleteScheduleResponse);
+}
+
+message ExecuteWorkflowRequest {
+  WorkflowName workflow_name = 1 [(buf.validate.field).required = true];
+  google.protobuf.Struct input = 2;
+}
+
+message ExecuteWorkflowResponse {
+  string run_id = 1;
+  google.protobuf.Struct output = 2;
+  string workflow_id = 3;
+}
+
+message StartWorkflowRequest {
+  WorkflowName workflow_name = 1 [(buf.validate.field).required = true];
+  google.protobuf.Struct input = 2;
+  string workflow_id = 3;
+}
+
+message StartWorkflowResponse {
+  string workflow_id = 1;
+  string run_id = 2;
+}
+
+message SignalWorkflowRequest {
+  string workflow_id = 1 [(buf.validate.field).required = true];
+  string run_id = 2;
+  string signal_name = 3 [(buf.validate.field).required = true];
+  google.protobuf.Struct payload = 4;
+}
+
+message SignalWorkflowResponse {}
+
+message QueryWorkflowRequest {
+  string workflow_id = 1 [(buf.validate.field).required = true];
+  string run_id = 2;
+  string query_name = 3 [(buf.validate.field).required = true];
+  google.protobuf.Struct payload = 4;
+}
+
+message QueryWorkflowResponse {
+  google.protobuf.Struct result = 1;
+}
+
+message GetWorkflowRequest {
+  string workflow_id = 1 [(buf.validate.field).required = true];
+  string run_id = 2;
+  WorkflowName workflow_name = 3 [(buf.validate.field).required = true];
+}
+
+enum WorkflowName {
+  WORKFLOW_NAME_UNSPECIFIED = 0;
+  WORKFLOW_NAME_GREET_SOMEONE = 1;
+  WORKFLOW_NAME_PROCESS_ORDER = 2;
+  WORKFLOW_NAME_LONG_RUNNING = 3;
+}
+
+enum ScheduleOverlapPolicy {
+  SCHEDULE_OVERLAP_POLICY_UNSPECIFIED = 0;
+  SCHEDULE_OVERLAP_POLICY_SKIP = 1;
+  SCHEDULE_OVERLAP_POLICY_BUFFER_ONE = 2;
+  SCHEDULE_OVERLAP_POLICY_BUFFER_ALL = 3;
+  SCHEDULE_OVERLAP_POLICY_CANCEL_OTHER = 4;
+  SCHEDULE_OVERLAP_POLICY_TERMINATE_OTHER = 5;
+  SCHEDULE_OVERLAP_POLICY_ALLOW_ALL = 6;
+}
+
+message ScheduleSpec {
+  repeated string cron_expressions = 1;
+  google.protobuf.Duration interval = 2;
+  string time_zone = 3;
+}
+
+message ScheduleAction {
+  google.protobuf.Timestamp scheduled_at = 1;
+  google.protobuf.Timestamp started_at = 2;
+  string workflow_id = 3;
+  string run_id = 4;
+}
+
+message CreateScheduleRequest {
+  string schedule_id = 1 [(buf.validate.field).required = true];
+  WorkflowName workflow_name = 2 [(buf.validate.field).required = true];
+  google.protobuf.Struct input = 3;
+  ScheduleSpec spec = 4 [(buf.validate.field).required = true];
+  ScheduleOverlapPolicy overlap = 5;
+  bool paused = 6;
+  bool trigger_immediately = 7;
+  string note = 8;
+  string workflow_id = 9;
+}
+
+message CreateScheduleResponse {
+  string schedule_id = 1;
+}
+
+message UpdateScheduleRequest {
+  string schedule_id = 1 [(buf.validate.field).required = true];
+  WorkflowName workflow_name = 2;
+  google.protobuf.Struct input = 3;
+  ScheduleSpec spec = 4;
+  ScheduleOverlapPolicy overlap = 5;
+  optional bool paused = 6;
+  optional string note = 7;
+  optional string workflow_id = 8;
+}
+
+message DescribeScheduleRequest {
+  string schedule_id = 1 [(buf.validate.field).required = true];
+}
+
+message DescribeScheduleResponse {
+  string schedule_id = 1;
+  WorkflowName workflow_name = 2;
+  string workflow_type = 3;
+  ScheduleSpec spec = 4;
+  bool paused = 5;
+  string note = 6;
+  repeated google.protobuf.Timestamp next_action_times = 7;
+  repeated ScheduleAction recent_actions = 8;
+  repeated string running_workflow_ids = 9;
+  int32 num_actions = 10;
+}
+
+message ListSchedulesRequest {}
+
+message ScheduleListItem {
+  string schedule_id = 1;
+  WorkflowName workflow_name = 2;
+  string workflow_type = 3;
+  bool paused = 4;
+  repeated google.protobuf.Timestamp next_action_times = 5;
+}
+
+message ListSchedulesResponse {
+  repeated ScheduleListItem schedules = 1;
+}
+
+message TriggerScheduleRequest {
+  string schedule_id = 1 [(buf.validate.field).required = true];
+  ScheduleOverlapPolicy overlap = 2;
+}
+
+message TriggerScheduleResponse {}
+
+message PauseScheduleRequest {
+  string schedule_id = 1 [(buf.validate.field).required = true];
+  string note = 2;
+}
+
+message PauseScheduleResponse {}
+
+message UnpauseScheduleRequest {
+  string schedule_id = 1 [(buf.validate.field).required = true];
+  string note = 2;
+}
+
+message UnpauseScheduleResponse {}
+
+message DeleteScheduleRequest {
+  string schedule_id = 1 [(buf.validate.field).required = true];
+}
+
+message DeleteScheduleResponse {}

@@ -1,0 +1,19 @@
+version: v2
+
+managed:
+  enabled: true
+
+inputs:
+  - directory: proto/src
+    exclude_paths:
+      - proto/src/grpc/health/v1/health.proto
+
+plugins:
+  - protoc_builtin: go
+    out: ./proto/gen/go
+    opt:
+      - paths=source_relative
+  - protoc_builtin: go-grpc
+    out: ./proto/gen/go
+    opt:
+      - paths=source_relative
